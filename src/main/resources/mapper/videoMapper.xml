@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="work.yspan.mapper.VideoMapper">
+    <cache eviction="LRU" flushInterval="100000" readOnly="true" size="1024"/>
+    <sql id="base_video_field">
+        id,title,summary,price,point
+    </sql>
+    
+    <resultMap id="VideoOrderResultMap" type="VideoOrderDO">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="user_id" property="userId"/>
+        <result column="out_trade_no" property="outTradeNo"/>
+        <result column="create_time" property="createTime"/>
+        <result column="state" property="state"/>
+        <result column="total_fee" property="totalFee"/>
+        <result column="video_id" property="videoId"/>
+        <result column="video_title" property="videoTitle"/>
+        <result column="video_img" property="videoImg"/>
+        
+        <association property="user" javaType="UserDO" >
+            <id property="id"  column="user_id"/>
+            <result property="name" column="name"/>
+            <result property="headImg" column="head_img"/>
+            <result property="createTime" column="create_time"/>
+            <result property="phone" column="phone"/>
+        </association>
+
+    </resultMap>
+
+    <select id="queryVideoOrderList" resultMap="VideoOrderResultMap">
+        select
+        o.id id,
+        o.user_id ,
+        o.out_trade_no,
+        o.create_time,
+        o.state,
+        o.total_fee,
+        o.video_id,
+        o.video_title,
+        o.video_img,
+        u.name,
+        u.head_img,
+        u.create_time,
+        u.phone
+        from video_order o left join user u on o.user_id=u.id
+    </select>
+
+    <resultMap id="VideoResultMap" type="Video">
+        <id column="id" property="videoId" jdbcType="INTEGER"/>
+        <result column="title" property="title" jdbcType="VARCHAR"/>
+        <result column="summary" property="summary" jdbcType="VARCHAR"/>
+        <result column="price" property="price" jdbcType="DOUBLE"/>
+        <result column="cover_img" property="coverImg" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    
+    <select id="selectByIdWithReslutMap" resultMap="VideoResultMap">
+        select id,title,summary,price,cover_img from video where id=#{video_id,jdbcType=INTEGER}
+    </select>
+    
+    
+    <select id="selectById" resultType="Video">
+        select <include refid="base_video_field"/> from video where id=#{video_id};
+    </select>
+
+    <select id="selectByPointAndTitleLike" resultType="work.yspan.domain.Video" >
+        select * from video where point=#{point} and title like concat('%',#{title},'%')
+    </select>
+
+    <insert id="add" parameterType="work.yspan.domain.Video" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        insert into video (title,summary,cover_img,view_num,price,create_time,online,point)
+        values(#{title,jdbcType=VARCHAR},#{summary,jdbcType=VARCHAR},#{coverImg,jdbcType=VARCHAR},
+        #{viewNum,jdbcType=INTEGER},#{price,jdbcType=INTEGER},#{createTime,jdbcType=TIMESTAMP},#{online,jdbcType=INTEGER},#{point,jdbcType=DOUBLE})
+    </insert>
+
+    <insert id="addBatch" parameterType="work.yspan.domain.Video" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        insert into video (title,summary,cover_img,view_num,price,create_time,online,point)
+        values
+        <foreach collection="list" item="video" separator=",">
+            (#{video.title,jdbcType=VARCHAR},#{video.summary,jdbcType=VARCHAR},#{video.coverImg,jdbcType=VARCHAR},
+            #{video.viewNum,jdbcType=INTEGER},#{video.price,jdbcType=INTEGER},#{video.createTime,jdbcType=TIMESTAMP},#{video.online,jdbcType=INTEGER},#{video.point,jdbcType=DOUBLE})
+        </foreach>
+    </insert>
+
+
+
+    <update id="update" parameterType="work.yspan.domain.Video">
+        update video set title=#{title,jdbcType=VARCHAR} where id=#{videoId,jdbcType=INTEGER}
+    </update>
+
+    <!--更新操作-->
+    <update id="updateSelective" parameterType="work.yspan.domain.Video" >
+        update video
+        <trim prefix="set" suffixOverrides=",">
+            <if test="title != null">title=#{title,jdbcType=VARCHAR},</if>
+            <if test="createTime == null">create_time= now() ,</if>
+        </trim>
+        where id=#{videoId,jdbcType=INTEGER}
+    </update>
+
+
+    <!--通过point price 删除-->
+    <delete id="deleteByPointAndPrice" parameterType="java.util.Map">
+        delete from video where point <![CDATA[ <= ]]> #{point,jdbcType=DOUBLE} and price=#{price,jdbcType=INTEGER}
+    </delete>
+
+</mapper>

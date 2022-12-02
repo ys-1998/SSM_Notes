@@ -1,0 +1,4 @@
+work\yspan\utils\Mybatis_utils.class
+VideoApplication.class
+work\yspan\domain\Video.class
+work\yspan\mapper\VideoMapper.class

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="work.yspan.mapper.VideoOrderMapper">
+    <cache eviction="LRU" flushInterval="100000" readOnly="true" size="1024"/>
+<!--一对多查询-->
+    <resultMap id="userOrderMap" type="UserDO">
+        <id property="id" javaType="INTEGER" column="id"/>
+        <result property="name" column="name"/>
+        
+        <collection property="videoOrderList" ofType="VideoOrderDO">
+            <id property="id" column="id"/>
+            <result property="outTradeNo" column="out_trade_no"/>
+            <result property="createTime" column="create_time"/>
+            <result property="totalFee" column="total_fee"/>
+            <result property="videoId" column="video_id"/>
+        </collection>
+
+    </resultMap>
+
+    <select id="queryUserOrder" resultMap="userOrderMap">
+        select
+        u.name,
+        o.out_trade_no,
+        o.create_time,
+        o.total_fee,
+        o.video_id
+        from user u left join video_order o on u.id=o.user_id ;
+    </select>
+
+    <!--懒加载-->
+    <resultMap id="OrderLazyUser" type="VideoOrderDO">
+        <id property="id" column="id"/>
+
+        <result property="outTradeNo" column="out_trade_no"/>
+        <result property="createTime" column="create_time"/>
+        <result property="totalFee" column="total_fee"/>
+        <result property="videoId" column="video_id"/>
+        <result property="userId" column="user_id"/>
+        
+        <association property="user" javaType="UserDO" column="user_id" select="findUserById"/>
+    </resultMap>
+
+    <select id="queryOrderLazyUser" resultMap="OrderLazyUser">
+        select
+        o.id,
+        o.out_trade_no,
+        o.create_time,
+        o.total_fee,
+        o.video_id,
+        o.user_id
+        from video_order o;
+    </select>
+    
+    <select id="findUserById" resultType="UserDO">
+        select * from user where id=#{id,jdbcType=INTEGER};
+    </select>
+
+</mapper>
